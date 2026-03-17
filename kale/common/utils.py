@@ -40,12 +40,32 @@ def main_source_lives_in_cwd():
 
 
 def random_string(size=5, chars=string.ascii_lowercase + string.digits):
-    """Generate random string."""
+    """
+    Generate a random string of specified length.
+
+    Args:
+        size (int): Length of the generated string. Defaults to 5.
+        chars (str): Characters to choose from. Defaults to lowercase letters and digits.
+
+    Returns:
+        str: Randomly generated string.
+
+    Note:
+        Uses Python's random module and is not cryptographically secure.
+    """
     return "".join(random.choice(chars) for _ in range(size))
 
 
 def abs_working_dir(path):
-    """Get absolute path to parent dir."""
+    """
+    Get the absolute path of a directory, or the parent directory if a file path is provided.
+
+    Args:
+         path (str): File or directory path.
+
+    Returns:
+        str: Absolute path to the directory.
+    """
     abs_path = os.path.abspath(path)
     if os.path.isfile(path):
         abs_path = os.path.dirname(abs_path)
@@ -92,7 +112,15 @@ def rm_r(path, ignore_missing=True, silent=False):
 
 
 def remove_ansi_color_sequences(text):
-    """Remove ANSI color sequences from text."""
+  """
+  Remove ANSI escape sequences (color codes) from text.
+    
+  Args:
+      text (str): Input string possibly containing ANSI codes.
+
+  Returns:
+      str: Cleaned string without ANSI sequences.
+  """
     ansi_color_escape = re.compile(r"\x1B\[[0-9;]*m")
     return ansi_color_escape.sub("", text)
 
@@ -182,17 +210,31 @@ def clean_dir(path: str):
 
 
 def shorten_long_string(obj: Any, chars: int = 75):
-    """Shorten the string representation of the input object."""
+ """
+ Shorten the string representation of an object by keeping the beginning and end.
+
+ Args:
+    obj (Any): Input object to be shortened.
+    chars (int): Number of characters to keep at both ends.
+
+ Returns:
+    str: Shortened string with ellipsis in the middle.
+ """
     str_input = str(obj)
     return str_input[:chars] + " ..... " + str_input[len(str_input) - chars :]
 
 
 def dedent(text: str):
-    """Remove longest common prefix consisting of whitespaces.
+  """
+  Remove the longest common leading whitespace from each line in a multiline string.
+  (This helps normalize indentation.)
 
-    Args:
-        text: Multiline string
-    """
+  Args:
+      text (str): Multiline string.
+
+  Returns:
+      str: Dedented string with normalized indentation.
+  """
     matches = re.findall(r"(?m)^\s+", text)
     if len(matches) < len(text.splitlines()):
         return text
