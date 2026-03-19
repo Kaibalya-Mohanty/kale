@@ -71,7 +71,8 @@ class Step:
         ins (list[Any]): Input variables for the step
         outs (list[Any]): Output variables produced by the step
         artifacts (list[Artifact]): Artifacts associated with the step
-        parameters (dict[str, PipelineParam]): Pipeline parameters consumed"""
+        parameters (dict[str, PipelineParam]): Pipeline parameters consumed
+        """
 
     def __init__(
         self, source: list[str] | Callable, ins: list[Any] = None, outs: list[Any] = None, **kwargs
@@ -134,7 +135,9 @@ class Step:
 
         Args:
             pipeline_parameters_values (dict[str, PipelineParam]):
-                Dictionary of all pipeline parameters and their values."""
+                Dictionary of all pipeline parameters and their values.
+                
+        """
         log.info("%s Running step '%s'... %s", "-" * 10, self.name, "-" * 10)
         # select just the pipeline parameters consumed by this step
         _params = {k: pipeline_parameters_values[k] for k in self.parameters}
