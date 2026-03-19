@@ -55,7 +55,23 @@ class StepConfig(Config):
 
 
 class Step:
-    """Class used to store information about a Step of the pipeline."""
+    """Represents a single execution unit within a Kale pipeline.
+
+    A Step encapsulates:
+    - The source code or callable to execute
+    - Input and output data
+    - Associated artifacts and pipeline parameters
+    - Execution configuration (via StepConfig)
+
+    Steps are connected through dependencies to form a pipeline DAG
+    and are executed either locally or within a Kubeflow pipeline.
+
+    Attributes:
+        source (list[str] | Callable): Code or function executed by the step
+        ins (list[Any]): Input variables for the step
+        outs (list[Any]): Output variables produced by the step
+        artifacts (list[Artifact]): Artifacts associated with the step
+        parameters (dict[str, PipelineParam]): Pipeline parameters consumed"""
 
     def __init__(
         self, source: list[str] | Callable, ins: list[Any] = None, outs: list[Any] = None, **kwargs
@@ -76,7 +92,10 @@ class Step:
         self.fns_free_variables = {}
 
     def __call__(self, *args, **kwargs):
-        """Handler for when the @step decorated function is called."""
+        """Invoke the step execution handler.
+
+        This method is triggered when the step is called like a function.
+        It delegates execution to the configured execution handler."""
         return execution_handler(self, *args, **kwargs)
 
     def add_artifact(self, artifact_name, artifact_type, is_input):
@@ -105,7 +124,17 @@ class Step:
         self.artifacts.append(new_artifact)
 
     def run(self, pipeline_parameters_values: dict[str, PipelineParam]):
-        """Run the step locally."""
+        """Execute the step locally.
+
+        This method:
+        - Selects the relevant pipeline parameters for this step
+        - Uses a Marshaller to execute the step's source
+        - Handles input/output serialization
+        - Links generated artifacts after execution
+
+        Args:
+            pipeline_parameters_values (dict[str, PipelineParam]):
+                Dictionary of all pipeline parameters and their values."""
         log.info("%s Running step '%s'... %s", "-" * 10, self.name, "-" * 10)
         # select just the pipeline parameters consumed by this step
         _params = {k: pipeline_parameters_values[k] for k in self.parameters}
@@ -193,6 +222,23 @@ class Step:
 
 
 def __default_execution_handler(step: Step, *args, **kwargs):
+    """
+    Default execution handler for a Step.
+
+    This handler is used when no pipeline execution context is set.
+    It attempts to execute the step's source as a plain Python function.
+
+    If the step source is not callable (e.g., generated from a Notebook),
+    local execution is not supported and a RuntimeError is raised.
+
+    Args:
+        step (Step): The step to execute.
+        *args: Positional arguments passed to the step function.
+        **kwargs: Keyword arguments passed to the step function.
+
+    Raises:
+        RuntimeError: If the step source is not callable.
+    """
     log.info("No Pipeline registration handler is set.")
     if not callable(step.source):
         raise RuntimeError(
