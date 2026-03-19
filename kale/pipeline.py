@@ -12,6 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Pipeline Module
+
+This module defines the core structure and execution logic of a Kale pipeline.
+
+Overview:
+- A Pipeline is represented as a directed acyclic graph (DAG) of Steps
+- Each Step represents a unit of execution
+- Dependencies between steps define execution order
+
+Key Features:
+- Uses networkx.DiGraph for DAG representation
+- Supports topological sorting for execution
+- Handles pipeline parameters and their propagation
+- Provides utilities for dependency tracking and graph traversal
+
+Execution Flow:
+1. Steps are added to the pipeline
+2. Dependencies are defined between steps
+3. The pipeline is executed in topological order
+4. Each step receives pipeline parameters and executes accordingly
+
+This module acts as the central orchestration layer connecting
+steps, configuration, and execution logic.
+"""
+
 from collections.abc import Iterable
 import copy
 import logging
@@ -190,13 +216,22 @@ class PipelineConfig(Config):
 
 
 class Pipeline(nx.DiGraph):
-    """A Pipeline that can be converted into a KFP pipeline.
+    """Represents a Kale pipeline as a Directed Acyclic Graph (DAG).
 
-    This class is used to define a pipeline, its steps and all its
-    configurations. It extends nx.DiGraph to exploit some graph-related
-    algorithms but provides helper functions to work with Step objects
-    instead of standard networkx "nodes". This makes it simpler to access
-    the steps of the pipeline and their attributes.
+    The Pipeline class extends networkx.DiGraph to model execution
+    dependencies between Step objects. Each node corresponds to a Step,
+    and edges represent execution order.
+
+    Responsibilities:
+    - Manage step addition and dependency linking
+    - Maintain pipeline parameters
+    - Provide execution order via topological sorting
+    - Offer utilities to inspect pipeline structure
+
+    Attributes:
+        config (PipelineConfig): Pipeline configuration metadata
+        pipeline_parameters (dict): Mapping of parameter names to PipelineParam
+        processor: Optional processor used during execution
     """
 
     def __init__(self, config: PipelineConfig, *args, **kwargs):
@@ -212,7 +247,16 @@ class Pipeline(nx.DiGraph):
             step.run(self.pipeline_parameters)
 
     def add_step(self, step: Step):
-        """Add a new Step to the pipeline."""
+        """Add a Step to the pipeline.
+
+        Each step must have a unique name. The step is stored as a node
+        in the underlying graph.
+
+        Args:
+            step (Step): The step to add.
+
+        Raises:
+            RuntimeError: If the object is not a Step or name already exists."""
         if not isinstance(step, Step):
             raise RuntimeError("Not of type Step.")
         if step.name in self.steps_names:
@@ -220,7 +264,13 @@ class Pipeline(nx.DiGraph):
         self.add_node(step.name, step=step)
 
     def add_dependency(self, parent: Step, child: Step):
-        """Link two Steps in the pipeline."""
+        """Define an execution dependency between two steps.
+
+        The child step will only execute after the parent step completes.
+
+        Args:
+            parent (Step): The upstream step.
+            child (Step): The downstream step."""
         self.add_edge(parent.name, child.name)
 
     def get_step(self, name: str) -> Step:
@@ -282,12 +332,12 @@ class Pipeline(nx.DiGraph):
             yield self.get_step(name)
 
     def get_leaf_steps(self):
-        """Get the list of leaf steps of the pipeline.
+        """Retrieve all leaf steps in the pipeline.
 
-        A step is considered a leaf when its in-degree is > 0 and its
-        out-degree is 0.
+        A leaf step has no outgoing dependencies (i.e., no children).
 
-        Returns (list): A list of leaf Steps.
+        Returns:
+            list[Step]: List of leaf steps.
         """
         return [x for x in self.steps if self.out_degree(x.name) == 0]
 
