@@ -88,6 +88,7 @@ def rm_r(path, ignore_missing=True, silent=False):
         raise e
 
     log.info("Removing path `%s'", path)
+    log.debug("Attempting to remove path: %s", path)
 
     try:
         if os.path.isfile(path) or os.path.islink(path):
@@ -103,6 +104,7 @@ def rm_r(path, ignore_missing=True, silent=False):
             # the exception handler handle it (i.e., check ignore_missing etc.)
             raise OSError(errno.ENOENT, "No such file or directory", path)
     except OSError as e:
+        log.debug("Error while removing path: %s", path)
         if silent:
             log.debug("Path `%s' does not exist, skipping removing it", path)
             return
@@ -111,19 +113,23 @@ def rm_r(path, ignore_missing=True, silent=False):
             raise
 
 
-def remove_ansi_color_sequences(text):
-  """
-  Remove ANSI escape sequences (color codes) from text.
-    
-  Args:
-      text (str): Input string possibly containing ANSI codes.
+def remove_ansi_sequences(text: str) -> str:
+    """
+    Remove ANSI escape sequences from text.
 
-  Returns:
-      str: Cleaned string without ANSI sequences.
-  """
-    ansi_color_escape = re.compile(r"\x1B\[[0-9;]*m")
-    return ansi_color_escape.sub("", text)
+    Args:
+        text (str): Input string possibly containing ANSI codes.
 
+    Returns:
+        str: Cleaned string without ANSI sequences.
+    """
+    if not isinstance(text, str):
+        return text
+
+    ansi_escape = re.compile(
+        r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"
+    )
+    return ansi_escape.sub("", text)
 
 def comment_magic_commands(code):
     """Comment the magic commands in a code block."""
@@ -221,7 +227,9 @@ def shorten_long_string(obj: Any, chars: int = 75):
     str: Shortened string with ellipsis in the middle.
  """
     str_input = str(obj)
-    return str_input[:chars] + " ..... " + str_input[len(str_input) - chars :]
+    if len(str_input) <= chars * 2:
+        return str_input
+    return str_input[:chars] + " ..... " + str_input[-chars:]
 
 
 def dedent(text: str):
