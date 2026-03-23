@@ -40,32 +40,12 @@ def main_source_lives_in_cwd():
 
 
 def random_string(size=5, chars=string.ascii_lowercase + string.digits):
-    """
-    Generate a random string of specified length.
-
-    Args:
-        size (int): Length of the generated string. Defaults to 5.
-        chars (str): Characters to choose from. Defaults to lowercase letters and digits.
-
-    Returns:
-        str: Randomly generated string.
-
-    Note:
-        Uses Python's random module and is not cryptographically secure.
-    """
+    """Generate random string."""
     return "".join(random.choice(chars) for _ in range(size))
 
 
 def abs_working_dir(path):
-    """
-    Get the absolute path of a directory, or the parent directory if a file path is provided.
-
-    Args:
-         path (str): File or directory path.
-
-    Returns:
-        str: Absolute path to the directory.
-    """
+    """Get absolute working directory."""
     abs_path = os.path.abspath(path)
     if os.path.isfile(path):
         abs_path = os.path.dirname(abs_path)
@@ -73,12 +53,7 @@ def abs_working_dir(path):
 
 
 def rm_r(path, ignore_missing=True, silent=False):
-    """Remove a file or directory.
-
-    Similar to rm -r. If the path does not exist and ignore_missing is False,
-    OSError is raised, otherwise it is ignored.
-    If silent is True, nothing is raised.
-    """
+    """Remove a file or directory."""
 
     def onerror(function, path, excinfo):
         # Function to handle ENOENT in shutil.rmtree()
@@ -114,15 +89,7 @@ def rm_r(path, ignore_missing=True, silent=False):
 
 
 def remove_ansi_sequences(text: str) -> str:
-    """
-    Remove ANSI escape sequences from text.
-
-    Args:
-        text (str): Input string possibly containing ANSI codes.
-
-    Returns:
-        str: Cleaned string without ANSI sequences.
-    """
+    """Remove ANSI escape sequences from text."""
     if not isinstance(text, str):
         return text
 
@@ -162,21 +129,7 @@ def is_ipython() -> bool:
 
 
 def graceful_exit(exit_code):
-    """Exit the program gracefully.
-
-    Running the function `sys.exit()` raises a special exception `SystemExit`
-    that is not caught by the python REPL, making it exit the program.
-    IPython's REPL, instead, does catch `SystemExit`. It displays the message
-    and then goes back to the REPL.
-
-    Code that could either run in an IPython kernel (because the Kale pipeline
-    was produced from a notebook) or in a standard Python process, needs to
-    handle the exit process seamlessly, regardless of where it's running.
-
-    In case the code is running inside an IPython kernel, this function raises
-    a `KaleGracefulExit` exception. This exception is expected to ke captured
-    inside the `kale.common.jputils.capture_streams` function.
-    """
+    """Exit the program gracefully."""
     if is_ipython():
         from kale.common.jputils import KaleGracefulExit
 
@@ -216,16 +169,7 @@ def clean_dir(path: str):
 
 
 def shorten_long_string(obj: Any, chars: int = 75):
- """
- Shorten the string representation of an object by keeping the beginning and end.
-
- Args:
-    obj (Any): Input object to be shortened.
-    chars (int): Number of characters to keep at both ends.
-
- Returns:
-    str: Shortened string with ellipsis in the middle.
- """
+ """Shorten long string."""
     str_input = str(obj)
     if len(str_input) <= chars * 2:
         return str_input
@@ -233,16 +177,7 @@ def shorten_long_string(obj: Any, chars: int = 75):
 
 
 def dedent(text: str):
-  """
-  Remove the longest common leading whitespace from each line in a multiline string.
-  (This helps normalize indentation.)
-
-  Args:
-      text (str): Multiline string.
-
-  Returns:
-      str: Dedented string with normalized indentation.
-  """
+  """Dedent text."""
     matches = re.findall(r"(?m)^\s+", text)
     if len(matches) < len(text.splitlines()):
         return text
@@ -250,33 +185,7 @@ def dedent(text: str):
 
 
 def compute_pip_index_urls() -> list[str]:
-    """Compute the list of pip simple index URLs for generated KFP components.
-
-    Using a local PyPI index is useful when itering on local
-    developement with an unpublished version of Kale.
-
-    Precedence:
-        1. If `KALE_PIP_INDEX_URLS` is set, split its comma-separated value and
-        return that list (order preserved).
-        2. Else, if `KALE_DEV_MODE` is truthy (`1`, `true`, `yes`, or `on`),
-        return a list with the devpi simple URL (`KALE_DEVPI_SIMPLE_URL`) or
-        its default value.
-        3. Otherwise, return the production default:
-        ["https://pypi.org/simple"].
-
-    Environment variables:
-        KALE_PIP_INDEX_URLS:
-            Comma-separated list of PEP 503 “simple” index URLs. Highest
-            priority.
-        KALE_DEV_MODE:
-            Boolean-like flag enabling dev mode (interprets 1/true/yes/on).
-        KALE_DEVPI_SIMPLE_URL:
-            Devpi “simple” index URL used when dev mode is enabled.
-
-    Returns:
-        list[str]: Index URLs suitable for the `pip_index_urls` parameter in
-        `@kfp_dsl.component`.
-    """
+    """Compute pip index URLs."""
     pypi_prod_url = "https://pypi.org/simple"
     urls: list[str]
 
@@ -311,17 +220,7 @@ def compute_pip_index_urls() -> list[str]:
 
 
 def compute_trusted_hosts() -> list[str]:
-    """Compute the list of trusted hosts for use with pip.
-
-    If user set a comma separated list of hosts using the
-    system property KALE_PIP_TRUSTED_HOSTS, then these hosts
-    will be used as trusted hosts, otherwise the list will be
-    empty.
-
-
-    :return: The list of trusted hosts configured by the user
-    :rtype: list[str]
-    """
+    """Compute trusted hosts."""
     pip_trusted_hosts = os.getenv("KALE_PIP_TRUSTED_HOSTS")
     trusted_hosts: list[str] = []
     if pip_trusted_hosts:
